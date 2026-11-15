@@ -44,6 +44,17 @@ export async function getCurrentUser() {
   try { return await account.get() } catch { return null }
 }
 
+export async function getAdminStatus() {
+  const adminTeamId = import.meta.env.VITE_APPWRITE_ADMIN_TEAM_ID
+  if (!adminTeamId) return false
+  try {
+    const result = await account.listMemberships({ total: false })
+    return result.memberships.some((membership) => membership.teamId === adminTeamId)
+  } catch {
+    return false
+  }
+}
+
 export async function registerAccount({ name, email, password }) {
   await account.create({ userId: ID.unique(), name, email, password })
   return account.createEmailPasswordSession({ email, password })

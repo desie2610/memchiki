@@ -7,10 +7,11 @@ import Feed from './components/Feed/Feed.jsx'
 import Footer from './components/Footer/Footer.jsx'
 import ProfileDialog from './components/ProfileDialog/ProfileDialog.jsx'
 import { emptyCommunity } from './data/memes.js'
-import { createCategory, createMeme, deleteMeme, getCurrentUser, loadCommunity, registerAccount, signIn, signOut, toggleLike } from './lib/appwrite.js'
+import { createCategory, createMeme, deleteMeme, getAdminStatus, getCurrentUser, loadCommunity, registerAccount, signIn, signOut, toggleLike } from './lib/appwrite.js'
 
 function App() {
   const [profile, setProfile] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [community, setCommunity] = useState(emptyCommunity)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -25,7 +26,7 @@ function App() {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { getCurrentUser().then(async (user) => { setProfile(user); await refresh(user) }) }, [refresh])
+  useEffect(() => { getCurrentUser().then(async (user) => { setProfile(user); setIsAdmin(await getAdminStatus()); await refresh(user) }) }, [refresh])
 
   async function authenticate(mode, values) {
     try {
@@ -33,6 +34,7 @@ function App() {
       else await signIn(values)
       const user = await getCurrentUser()
       setProfile(user)
+      setIsAdmin(await getAdminStatus())
       await refresh(user)
       setProfileOpen(false)
       return true
@@ -40,7 +42,7 @@ function App() {
   }
 
   async function handleSignOut() {
-    try { await signOut(); setProfile(null); await refresh(null) } catch (signOutError) { setError(signOutError.message) }
+    try { await signOut(); setProfile(null); setIsAdmin(false); await refresh(null) } catch (signOutError) { setError(signOutError.message) }
   }
 
   async function handleCreateCategory(name) {
@@ -59,6 +61,7 @@ function App() {
   }
 
   async function handleDeleteMeme(memeId) {
+    if (!isAdmin) { setError('Удалять мемы может только администратор.'); return }
     if (!window.confirm('Удалить этот мем?')) return
     try { await deleteMeme(memeId); await refresh(profile) } catch (deleteError) { setError(deleteError.message) }
   }
@@ -68,7 +71,7 @@ function App() {
     <GlobalStyle />
     <Page>
       <Header profile={publicProfile} onOpenProfile={() => setProfileOpen(true)} />
-      <Shell><Hero /><ContentLayout><Feed community={community} profile={publicProfile} onCreateCategory={handleCreateCategory} onCreateMeme={handleCreateMeme} onToggleLike={handleToggleLike} onDeleteMeme={handleDeleteMeme} storageError={error || (loading ? 'Загрузка…' : '')} /></ContentLayout></Shell>
+      <Shell><Hero /><ContentLayout><Feed community={community} profile={publicProfile} isAdmin={isAdmin} onCreateCategory={handleCreateCategory} onCreateMeme={handleCreateMeme} onToggleLike={handleToggleLike} onDeleteMeme={handleDeleteMeme} storageError={error || (loading ? 'Загрузка…' : '')} /></ContentLayout></Shell>
       <Footer />
       {isProfileOpen && <ProfileDialog profile={profile} community={community} error={error} onClose={() => setProfileOpen(false)} onAuthenticate={authenticate} onSignOut={handleSignOut} onToggleLike={handleToggleLike} />}
     </Page>

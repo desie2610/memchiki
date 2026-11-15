@@ -23,6 +23,7 @@ import { isAdminName } from '../../data/memes.js'
 function Feed({
   community,
   profile,
+  isAdmin,
   onCreateCategory,
   onCreateMeme,
   onToggleLike,
@@ -116,7 +117,7 @@ function Feed({
               key={meme.id}
               meme={meme}
               isAdminAuthor={isAdminName(meme.author)}
-              canDelete={false}
+              canDelete={isAdmin}
               onDelete={() => onDeleteMeme(meme.id)}
               isLiked={community.likedMemeIds.includes(meme.id)}
               onToggleLike={() => toggleLike(meme.id)}
