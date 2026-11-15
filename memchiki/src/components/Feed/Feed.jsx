@@ -6,6 +6,7 @@ import {
   FilterButton,
   FilterRow,
   FilterItem,
+  DeleteCategoryButton,
   ActionButton,
   Actions,
   SectionHint,
@@ -28,6 +29,7 @@ function Feed({
   onCreateMeme,
   onToggleLike,
   onDeleteMeme,
+  onDeleteCategory,
   storageError,
 }) {
   const [activeFilter, setActiveFilter] = useState('all')
@@ -107,6 +109,7 @@ function Feed({
             >
               {category}
             </FilterButton>
+            {isAdmin && <DeleteCategoryButton type="button" aria-label={`Удалить категорию: ${category}`} title="Удалить категорию" onClick={() => onDeleteCategory(category)}>×</DeleteCategoryButton>}
           </FilterItem>
         ))}
       </FilterRow>

@@ -79,6 +79,7 @@ export async function loadCommunity(userId) {
   const likeCounts = likes.reduce((counts, like) => ({ ...counts, [like.memeId]: (counts[like.memeId] || 0) + 1 }), {})
   return {
     categories: categoryResult.rows.map((item) => item.name),
+    categoryRows: categoryResult.rows.map((item) => ({ id: item.$id, name: item.name })),
     memes: memeResult.rows.map((item) => {
       const meme = JSON.parse(item.payload)
       return { ...meme, id: item.$id, image: getFileUrl(meme.imageFileId), likes: likeCounts[item.$id] || 0 }
@@ -108,8 +109,9 @@ export async function toggleLike(memeId, userId, isLiked) {
   return tables.createRow({ databaseId: database, tableId, rowId: id, data: { payload: JSON.stringify({ memeId, userId }) }, permissions: documentPermissions(userId) })
 }
 
-export function deleteMeme(memeId) {
-  return tables.deleteRow({ databaseId: required(databaseId, 'VITE_APPWRITE_DATABASE_ID'), tableId: required(tableIds.memes, 'VITE_APPWRITE_MEMES_TABLE_ID'), rowId: memeId })
+export async function deleteMeme(meme) {
+  await tables.deleteRow({ databaseId: required(databaseId, 'VITE_APPWRITE_DATABASE_ID'), tableId: required(tableIds.memes, 'VITE_APPWRITE_MEMES_TABLE_ID'), rowId: meme.id })
+  if (meme.imageFileId) await storage.deleteFile({ bucketId: required(bucketId, 'VITE_APPWRITE_BUCKET_ID'), fileId: meme.imageFileId })
 }
 
 export function deleteCategory(categoryId) {

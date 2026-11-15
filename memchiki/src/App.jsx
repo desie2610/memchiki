@@ -7,7 +7,7 @@ import Feed from './components/Feed/Feed.jsx'
 import Footer from './components/Footer/Footer.jsx'
 import ProfileDialog from './components/ProfileDialog/ProfileDialog.jsx'
 import { emptyCommunity } from './data/memes.js'
-import { createCategory, createMeme, deleteMeme, getAdminStatus, getCurrentUser, loadCommunity, registerAccount, signIn, signOut, toggleLike } from './lib/appwrite.js'
+import { createCategory, createMeme, deleteCategory, deleteMeme, getAdminStatus, getCurrentUser, loadCommunity, registerAccount, signIn, signOut, toggleLike } from './lib/appwrite.js'
 
 function App() {
   const [profile, setProfile] = useState(null)
@@ -63,7 +63,14 @@ function App() {
   async function handleDeleteMeme(memeId) {
     if (!isAdmin) { setError('Удалять мемы может только администратор.'); return }
     if (!window.confirm('Удалить этот мем?')) return
-    try { await deleteMeme(memeId); await refresh(profile) } catch (deleteError) { setError(deleteError.message) }
+    try { await deleteMeme(community.memes.find((meme) => meme.id === memeId)); await refresh(profile) } catch (deleteError) { setError(deleteError.message) }
+  }
+
+  async function handleDeleteCategory(name) {
+    if (!isAdmin) { setError('Удалять категории может только администратор.'); return }
+    const category = community.categoryRows.find((item) => item.name === name)
+    if (!category || !window.confirm(`Удалить категорию «${name}»?`)) return
+    try { await deleteCategory(category.id); await refresh(profile) } catch (deleteError) { setError(deleteError.message) }
   }
 
   const publicProfile = profile ? { id: profile.$id, name: profile.name } : null
@@ -71,7 +78,7 @@ function App() {
     <GlobalStyle />
     <Page>
       <Header profile={publicProfile} onOpenProfile={() => setProfileOpen(true)} />
-      <Shell><Hero /><ContentLayout><Feed community={community} profile={publicProfile} isAdmin={isAdmin} onCreateCategory={handleCreateCategory} onCreateMeme={handleCreateMeme} onToggleLike={handleToggleLike} onDeleteMeme={handleDeleteMeme} storageError={error || (loading ? 'Загрузка…' : '')} /></ContentLayout></Shell>
+      <Shell><Hero /><ContentLayout><Feed community={community} profile={publicProfile} isAdmin={isAdmin} onCreateCategory={handleCreateCategory} onCreateMeme={handleCreateMeme} onToggleLike={handleToggleLike} onDeleteMeme={handleDeleteMeme} onDeleteCategory={handleDeleteCategory} storageError={error || (loading ? 'Загрузка…' : '')} /></ContentLayout></Shell>
       <Footer />
       {isProfileOpen && <ProfileDialog profile={profile} community={community} error={error} onClose={() => setProfileOpen(false)} onAuthenticate={authenticate} onSignOut={handleSignOut} onToggleLike={handleToggleLike} />}
     </Page>
