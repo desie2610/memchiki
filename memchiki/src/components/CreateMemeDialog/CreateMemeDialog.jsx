@@ -42,15 +42,6 @@ import { useEffect, useState } from 'react'
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
-function readImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = () => reject(new Error('Не удалось прочитать изображение.'))
-    reader.readAsDataURL(file)
-  })
-}
-
 function CreateMemeDialog({ categories, selectedCategory, profile, onClose, onCreate }) {
   const [category, setCategory] = useState(selectedCategory || categories[0] || '')
   const [title, setTitle] = useState('')
@@ -110,16 +101,14 @@ function CreateMemeDialog({ categories, selectedCategory, profile, onClose, onCr
     }
 
     try {
-      const image = imageFile ? await readImage(imageFile) : ''
-      onCreate({
-        id: crypto.randomUUID(),
+      await onCreate({
         category,
         title: title.trim(),
         text: text.trim(),
         author: author.trim() || profile?.name || '',
         authorId: profile?.id || '',
         tag: tag.trim() ? `#${tag.trim().replace(/^#+/, '')}` : '',
-        image,
+        imageFile,
         createdAt: new Date().toISOString(),
         likes: 0,
       })

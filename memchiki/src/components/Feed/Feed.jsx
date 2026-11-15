@@ -6,7 +6,6 @@ import {
   FilterButton,
   FilterRow,
   FilterItem,
-  DeleteCategoryButton,
   ActionButton,
   Actions,
   SectionHint,
@@ -24,10 +23,10 @@ import { isAdminName } from '../../data/memes.js'
 function Feed({
   community,
   profile,
-  isAdminUnlocked,
-  onCommunityChange,
+  onCreateCategory,
+  onCreateMeme,
+  onToggleLike,
   onDeleteMeme,
-  onDeleteCategory,
   storageError,
 }) {
   const [activeFilter, setActiveFilter] = useState('all')
@@ -42,45 +41,22 @@ function Feed({
     return matchesFilter && matchesSearch
   })
 
-  function createCategory(name) {
-    onCommunityChange({ ...community, categories: [...community.categories, name] })
-    setActiveFilter(name)
-    setDialog(null)
+  async function createCategory(name) {
+    if (await onCreateCategory(name)) {
+      setActiveFilter(name)
+      setDialog(null)
+    }
   }
 
-  function createMeme(meme) {
-    onCommunityChange({
-      ...community,
-      memes: [meme, ...community.memes],
-    })
-    setActiveFilter(meme.category)
-    setDialog(null)
+  async function createMeme(meme) {
+    if (await onCreateMeme(meme)) {
+      setActiveFilter(meme.category)
+      setDialog(null)
+    }
   }
 
   function toggleLike(memeId) {
-    const isLiked = community.likedMemeIds.includes(memeId)
-    const likedMemeIds = isLiked
-      ? community.likedMemeIds.filter((id) => id !== memeId)
-      : [...community.likedMemeIds, memeId]
-    const memes = community.memes.map((meme) => (
-      meme.id === memeId
-        ? { ...meme, likes: Math.max(0, (Number(meme.likes) || 0) + (isLiked ? -1 : 1)) }
-        : meme
-    ))
-
-    onCommunityChange({ ...community, memes, likedMemeIds })
-  }
-
-  function deleteCategory(category) {
-    const memeCount = community.memes.filter((meme) => meme.category === category).length
-    const message = memeCount
-      ? `Удалить категорию «${category}» и ${memeCount} ${memeCount === 1 ? 'мем' : 'мемов'} в ней?`
-      : `Удалить категорию «${category}»?`
-
-    if (!window.confirm(message)) return
-
-    onDeleteCategory(category)
-    if (activeFilter === category) setActiveFilter('all')
+    onToggleLike(memeId)
   }
 
   return (
@@ -130,16 +106,6 @@ function Feed({
             >
               {category}
             </FilterButton>
-            {isAdminUnlocked && (
-              <DeleteCategoryButton
-                type="button"
-                aria-label={`Удалить категорию: ${category}`}
-                title="Удалить категорию"
-                onClick={() => deleteCategory(category)}
-              >
-                ×
-              </DeleteCategoryButton>
-            )}
           </FilterItem>
         ))}
       </FilterRow>
@@ -150,7 +116,7 @@ function Feed({
               key={meme.id}
               meme={meme}
               isAdminAuthor={isAdminName(meme.author)}
-              canDelete={isAdminUnlocked}
+              canDelete={false}
               onDelete={() => onDeleteMeme(meme.id)}
               isLiked={community.likedMemeIds.includes(meme.id)}
               onToggleLike={() => toggleLike(meme.id)}
